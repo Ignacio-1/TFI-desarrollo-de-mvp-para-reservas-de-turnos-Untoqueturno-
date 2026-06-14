@@ -1,18 +1,19 @@
 import { createClient } from "@supabase/supabase-js";
 
-// Cliente de acceso a datos 100% independiente para el microservicio.
-// Configurado sin persistencia de sesión para soportar concurrencia masiva (stateless).
 const supabaseUrl = process.env.SUPABASE_URL || "";
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
+const readReplicaUrl = process.env.SUPABASE_READ_REPLICA_URL || supabaseUrl;
 
-export const dbClient = createClient(supabaseUrl, supabaseKey, {
+const sharedConfig = {
   auth: {
     persistSession: false,
     autoRefreshToken: false,
     detectSessionInUrl: false
   },
   global: {
-    // Se utiliza el fetch nativo para optimizar el pool de conexiones en la capa de red
-    fetch: (...args) => fetch(...args),
+    fetch: (...args: any[]) => fetch(args[0], args[1]),
   }
-});
+};
+
+export const writeDbClient = createClient(supabaseUrl, supabaseKey, sharedConfig);
+export const readDbClient = createClient(readReplicaUrl, supabaseKey, sharedConfig);

@@ -24,18 +24,18 @@ spec:
             memory: "128Mi"
             cpu: "100m"
           limits:
-            memory: "256Mi"   # Si excede esto, K8s hará un OOMKilled (evita inanición del nodo)
-            cpu: "500m"       # Si excede esto, sufrirá Throttling (ralentización controlada)
+            memory: "256Mi"
+            cpu: "500m"
         livenessProbe:
           httpGet:
             path: /health
             port: 3000
           initialDelaySeconds: 15
           periodSeconds: 10
-          failureThreshold: 3 # Reinicia el contenedor si está bloqueado permanentemente
+          failureThreshold: 3
         readinessProbe:
           httpGet:
             path: /ready
             port: 3000
-          initialDelaySeconds: 10 # Retira el Pod del Load Balancer si aún no inicializó dependencias
+          initialDelaySeconds: 10
           periodSeconds: 5

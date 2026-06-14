@@ -1,24 +1,23 @@
-# Etapa 1: Build
 FROM node:20-alpine AS build
 WORKDIR /app
 
-# Optimización de caché de Docker
 COPY package*.json ./
-RUN npm ci --only=production
+RUN npm install
 
 COPY tsconfig*.json ./
 COPY src ./src
+RUN npx tsc
 
-# Etapa 2: Producción (Entorno inmutable y ligero)
 FROM node:20-alpine AS production
 WORKDIR /app
 
-COPY --from=build /app/node_modules ./node_modules
-COPY --from=build /app/src ./src
-COPY --from=build /app/package.json ./package.json
+COPY package*.json ./
+RUN npm ci --only=production
+
+COPY --from=build /app/dist ./dist
 
 USER node
 ENV NODE_ENV=production
 EXPOSE 3001
 
-CMD ["node", "src/index.js"]
+CMD ["node", "dist/index.js"]
