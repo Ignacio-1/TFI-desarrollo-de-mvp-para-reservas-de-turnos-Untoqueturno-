@@ -1,0 +1,11 @@
+# Ignorar secretos
+.env
+.env.*
+
+# Ignorar dependencias locales
+node_modules/
+dist/
+build/
+
+# Ignorar logs
+*.log
