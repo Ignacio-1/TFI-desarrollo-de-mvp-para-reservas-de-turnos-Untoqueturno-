@@ -4,23 +4,18 @@ import { formatMoney } from '@/lib/format';
 import { type Service, type Professional } from '@/lib/types';
 
 describe('Pruebas Defensivas y del Mundo Real', () => {
-
   describe('D1. Valores Nulos/Incompletos', () => {
     it('formatMoney: debería manejar null, undefined o NaN sin crashear', () => {
-      // Usamos replace para normalizar el espacio de no separación (\xa0) que inserta Intl.NumberFormat
-      // @ts-expect-error probando caso de abuso
-      expect(formatMoney(null).replace(/\s/g, ' ')).toBe('$ 0');
-      // @ts-expect-error probando caso de abuso
-      expect(formatMoney(undefined).replace(/\s/g, ' ')).toBe('$ 0');
+      expect(formatMoney(null as any).replace(/\s/g, ' ')).toBe('$ 0');
+      expect(formatMoney(undefined as any).replace(/\s/g, ' ')).toBe('$ 0');
       expect(formatMoney(NaN).replace(/\s/g, ' ')).toBe('$ 0');
     });
 
     it('buildAvailableSlots: debería retornar vacío si recibe profesional nulo', () => {
-      // @ts-expect-error probando profesional sin horas o corrupto
-      const badPro: Professional = { id: 'p1' }; // Le faltan todos los campos
+      const badPro: Professional = { id: 'p1' } as any;
       const dummyService: Service = { id: 's1', duration_min: 30, capacity: 1 } as any;
       const slots = buildAvailableSlots(badPro, '2024-01-01', dummyService, []);
-      expect(slots).toEqual([]); // No debe crashear, sino retornar [] al no tener hours
+      expect(slots).toEqual([]);
     });
   });
 
@@ -38,18 +33,16 @@ describe('Pruebas Defensivas y del Mundo Real', () => {
       const dummyService: Service = { id: 's1', duration_min: 30, capacity: 1 } as any;
       
       const slots = buildAvailableSlots(dummyPro, '2024-01-01', dummyService, []);
-      // Al pasar NaN por los splits fallidos, el loop interno while(cur <= end) debería fallar rápido (NaN <= NaN es false)
       expect(slots).toEqual([]);
     });
   });
 
   describe('D3. Peticiones Duplicadas (Race Conditions)', () => {
-    it('Simulación asíncrona: Evitar que una doble ejecución mute el mismo array accidentalmente', async () => {
-      let isSubmitting = false; // El estado de React que bloquea el botón
+    it('Simulación asíncrona: Evitar doble ejecución', async () => {
+      let isSubmitting = false;
       let appointmentsDb = 0;
 
       const submitCheckout = async () => {
-        // Defensa 1: El frontend bloquea inmediatamente el segundo click (React isSubmitting state)
         if (isSubmitting) throw new Error('Bloqueado por UI');
         isSubmitting = true;
         
@@ -62,20 +55,17 @@ describe('Pruebas Defensivas y del Mundo Real', () => {
         }
       };
 
-      // Disparamos 2 clicks al mismo tiempo sin await simulando doble tap rápido
       const p1 = submitCheckout();
       const p2 = submitCheckout();
 
       const results = await Promise.allSettled([p1, p2]);
       
-      // El primero debe pasar
       expect(results[0].status).toBe('fulfilled');
-      // El segundo debe ser bloqueado por el estado isSubmitting en microtareas sincrónicas
       expect(results[1].status).toBe('rejected');
       if (results[1].status === 'rejected') {
         expect(results[1].reason.message).toBe('Bloqueado por UI');
       }
-      expect(appointmentsDb).toBe(1); // La DB solo registró 1 turno válido
+      expect(appointmentsDb).toBe(1);
     });
   });
 
