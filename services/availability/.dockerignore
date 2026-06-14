@@ -1,0 +1,16 @@
+# Ignorar credenciales y secretos (OBLIGATORIO)
+.env
+.env.*
+*.pem
+
+# Ignorar directorios locales para no reventar la caché de Docker
+node_modules/
+dist/
+build/
+.temp/
+
+# Ignorar logs y archivos de sistema operativo
+*.log
+npm-debug.log*
+.DS_Store
+Thumbs.db

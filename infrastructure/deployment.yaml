@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: availability-service
+  labels:
+    app: availability
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: availability
+  template:
+    metadata:
+      labels:
+        app: availability
+    spec:
+      containers:
+      - name: availability-container
+        image: untoqueturno/availability:v2.0.0
+        ports:
+        - containerPort: 3000
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"   # Si excede esto, K8s hará un OOMKilled (evita inanición del nodo)
+            cpu: "500m"       # Si excede esto, sufrirá Throttling (ralentización controlada)
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 3000
+          initialDelaySeconds: 15
+          periodSeconds: 10
+          failureThreshold: 3 # Reinicia el contenedor si está bloqueado permanentemente
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 3000
+          initialDelaySeconds: 10 # Retira el Pod del Load Balancer si aún no inicializó dependencias
+          periodSeconds: 5

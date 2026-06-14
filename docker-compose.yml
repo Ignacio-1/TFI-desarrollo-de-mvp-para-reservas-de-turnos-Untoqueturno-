@@ -1,0 +1,56 @@
+version: '3.8'
+
+services:
+  # Message Broker: RabbitMQ con Management UI (puerto 15672)
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: untoqueturno_rabbitmq
+    ports:
+      - "5672:5672"   # Puerto de comunicación de microservicios
+      - "15672:15672" # Interfaz de administración web
+    environment:
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: secret
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # API Gateway: Expone un único puerto al Frontend y maneja los Circuit Breakers
+  api-gateway:
+    build: 
+      context: ./infrastructure/api-gateway
+      dockerfile: Dockerfile
+    container_name: untoqueturno_gateway
+    ports:
+      - "8080:8080"
+    depends_on:
+      - availability-service
+      - subscriptions-service
+
+  # Microservicio de Disponibilidad (DDD)
+  availability-service:
+    build: 
+      context: ./services/availability
+      dockerfile: Dockerfile
+    container_name: untoqueturno_availability
+    environment:
+      - RABBITMQ_URL=amqp://admin:secret@rabbitmq:5672
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
+  # Microservicio de Suscripciones (El Guardián)
+  subscriptions-service:
+    build: 
+      context: ./services/subscriptions
+      dockerfile: Dockerfile
+    container_name: untoqueturno_subscriptions
+    environment:
+      - RABBITMQ_URL=amqp://admin:secret@rabbitmq:5672
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
