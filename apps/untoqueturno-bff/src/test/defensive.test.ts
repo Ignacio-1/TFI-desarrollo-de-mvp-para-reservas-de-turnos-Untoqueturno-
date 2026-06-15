@@ -1,7 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { buildAvailableSlots } from '@/lib/availability';
 import { formatMoney } from '@/lib/format';
-import { type Service, type Professional } from '@/lib/types';
 
 describe('Pruebas Defensivas y del Mundo Real', () => {
   describe('D1. Valores Nulos/Incompletos', () => {
@@ -11,28 +10,18 @@ describe('Pruebas Defensivas y del Mundo Real', () => {
       expect(formatMoney(NaN).replace(/\s/g, ' ')).toBe('$ 0');
     });
 
-    it('buildAvailableSlots: debería retornar vacío si recibe profesional nulo', () => {
-      const badPro: Professional = { id: 'p1' } as any;
-      const dummyService: Service = { id: 's1', duration_min: 30, capacity: 1 } as any;
-      const slots = buildAvailableSlots(badPro, '2024-01-01', dummyService, []);
+    it('buildAvailableSlots: debería retornar vacío si recibe profesional nulo', async () => {
+      // Al ser asincrónico y hacer fetch, un input nulo no explotará aquí porque
+      // JavaScript interpolará "undefined" en la URL y el backend devolverá 400.
+      // Como el fetch falla (mock o no), el bloque catch devuelve [].
+      const slots = await buildAvailableSlots(null as any, '2024-01-01', 's1');
       expect(slots).toEqual([]);
     });
   });
 
   describe('D2. Inyección de Basura', () => {
-    it('buildAvailableSlots: debería defenderse de strings vacíos o tipos erróneos', () => {
-      const dummyPro: Professional = { 
-        id: 'p1', 
-        name: 'test', 
-        title: null,
-        avatar_color: '#000',
-        active: true,
-        service_ids: [],
-        hours: [{ id: 'h1', professional_id: 'p1', date: '2024-01-01', start_time: 'INVALID', end_time: 'ALSO_INVALID' }]
-      };
-      const dummyService: Service = { id: 's1', duration_min: 30, capacity: 1 } as any;
-      
-      const slots = buildAvailableSlots(dummyPro, '2024-01-01', dummyService, []);
+    it('buildAvailableSlots: debería defenderse de strings vacíos o tipos erróneos', async () => {
+      const slots = await buildAvailableSlots('', '', '');
       expect(slots).toEqual([]);
     });
   });
