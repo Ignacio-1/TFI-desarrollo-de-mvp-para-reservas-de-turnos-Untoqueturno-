@@ -5,14 +5,12 @@ import axios from 'axios';
 const app = express();
 const port = 8080;
 
-// Configuración de Circuit Breaker para proteger el Gateway de caídas en cascada
 const availabilityOptions = {
-  timeout: 3000, // Falla si la petición dura más de 3 segundos
-  errorThresholdPercentage: 50, // Se "Abre" el circuito si falla el 50% de peticiones
-  resetTimeout: 10000 // Tarda 10 segundos antes de intentar un modo "Half-Open"
+  timeout: 3000,
+  errorThresholdPercentage: 50,
+  resetTimeout: 10000
 };
 
-// Función proxy hacia el microservicio
 const fetchAvailability = async (params: any) => {
   const { url, method } = params;
   const response = await axios({ url, method });
@@ -21,27 +19,20 @@ const fetchAvailability = async (params: any) => {
 
 const availabilityBreaker = new CircuitBreaker(fetchAvailability, availabilityOptions);
 
-// Función Fallback: Lo que se responde automáticamente cuando el circuito está ABIERTO (roto)
 availabilityBreaker.fallback(() => {
   return { 
     error: true, 
-    message: "El servicio de disponibilidad está temporalmente congestionado (Cortocircuito Activo).",
-    data: [] // Retornamos un array vacío para que el Tolerant Reader en React no explote
+    message: "El servicio de disponibilidad está temporalmente congestionado.",
+    data: []
   };
 });
 
-// Logs para auditoría del Patrón
-availabilityBreaker.on('open', () => console.warn('🔴 CIRCUIT BREAKER ABIERTO: Redirigiendo a Fallback.'));
-availabilityBreaker.on('halfOpen', () => console.info('🟡 CIRCUIT BREAKER MEDIO ABIERTO: Probando recuperación.'));
-availabilityBreaker.on('close', () => console.info('🟢 CIRCUIT BREAKER CERRADO: Operación normal.'));
-
 app.get('/api/v1/availability', async (req, res) => {
-  // Ruteo hacia el microservicio real
   const targetUrl = `http://availability-service:3000/api/v1/availability${req.url.substring(req.url.indexOf('?'))}`;
   try {
     const result = await availabilityBreaker.fire({ url: targetUrl, method: 'GET' });
     if (result.error) {
-      res.status(503).json(result); // 503 Service Unavailable
+      res.status(503).json(result);
     } else {
       res.json(result);
     }
@@ -50,6 +41,4 @@ app.get('/api/v1/availability', async (req, res) => {
   }
 });
 
-app.listen(port, () => {
-  console.log(`🚀 API Gateway escuchando en el puerto ${port}`);
-});
+app.listen(port, () => {});

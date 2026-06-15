@@ -1,7 +1,6 @@
 import '@testing-library/jest-dom';
 import { vi } from 'vitest';
 
-// Mock Supabase globally
 vi.mock('@/integrations/supabase/client', () => {
   return {
     supabase: {
@@ -18,7 +17,6 @@ vi.mock('@/integrations/supabase/client', () => {
   }
 });
 
-// Mock TanStack Router
 vi.mock('@tanstack/react-router', async () => {
   const actual = await vi.importActual('@tanstack/react-router');
   return {
