@@ -11,6 +11,7 @@ import {
   CreditCard,
 } from "lucide-react";
 import { BrandingStyle } from "@/components/BrandingStyle";
+import { AIChat } from "@/components/AIChat";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import type { Business } from "@/lib/types";
@@ -98,6 +99,7 @@ export function AdminLayout({
         </header>
         <main className="flex-1 p-4 pb-24 md:p-8">{children}</main>
       </div>
+      <AIChat />
     </div>
   );
 }

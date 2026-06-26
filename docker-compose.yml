@@ -65,3 +65,15 @@ services:
     depends_on:
       rabbitmq:
         condition: service_healthy
+
+  ai-assistant:
+    build: 
+      context: ./services/ai-assistant
+      dockerfile: Dockerfile
+    container_name: untoqueturno_ai
+    environment:
+      - RABBITMQ_URL=amqp://admin:secret@rabbitmq:5672
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+

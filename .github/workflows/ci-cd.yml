@@ -24,6 +24,7 @@ jobs:
           cd apps/untoqueturno-bff && npm install
           cd ../../services/availability && npm install
           cd ../subscriptions && npm install
+          cd ../ai-assistant && npm install
 
       - name: Ejecutar Batería de Pruebas (Unitarias y Defensivas)
         run: |
